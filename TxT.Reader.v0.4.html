@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小说阅读器</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #333;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        input[type="file"] {
+            margin-bottom: 20px;
+        }
+
+        #novel-content {
+            white-space: pre-line;
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            border-radius: 8px;
+            overflow-y: auto;
+            height: 80vh ;
+            position: relative;
+transition: opacity 0.5s ease-in-out;
+        }
+
+        #traffic-light {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            display: flex;
+            gap: 5px;
+        }
+
+        .light {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .red { background-color: #ff5757; }
+        .yellow { background-color: #ffd659; }
+        .green { background-color: #4cd964; }
+
+        #settings-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+        }
+
+        #settings-menu {
+            display: none;
+            position: absolute;
+            top: 35px;
+            right: 10px;
+            background-color: #fff;
+            padding: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            z-index: 1;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .settings-option {
+            cursor: pointer;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 5px;
+            border-radius: 5px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .settings-option:hover {
+            background-color: #f0f0f0;
+        }
+
+        #font-size-options {
+            display: flex;
+            gap: 5px;
+        }
+
+        #dark-mode-toggle {
+            display: flex;
+            align-items: center;
+        }
+
+        #font-adjust {
+            display: flex;
+            gap: 5px;
+        }
+
+        #font-adjust button {
+            cursor: pointer;
+            padding: 5px;
+            border: none;
+            border-radius: 3px;
+            background-color: #4cd964;
+            color: #fff;
+        }
+
+        #page-navigation {
+            display: flex;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        #page-number {
+            width: 50px;
+            text-align: center;
+        }
+
+        #save-btn, #import-btn {
+            cursor: pointer;
+            padding: 5px;
+            border: none;
+            border-radius: 3px;
+            background-color: #4cd964;
+            color: #fff;
+        }
+
+        #current-page {
+            margin-top: 10px;
+        }
+
+        #current-time {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 14px;
+        }
+
+        #batteryStatus {
+            position: fixed;
+            bottom: 40px;
+            right: 10px;
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+        }
+
+      
+/* 添加弹窗的样式 */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 10% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+    </style>
+</head>
+<body>
+    <div id="settings-btn" onclick="toggleSettingsMenu()">设置⚙️</div>
+    <div id="settings-menu">
+        <div class="settings-option">
+            <span>字体</span>
+            <select onchange="changeFont(this.value)">
+                <option value="Arial">Arial</option>
+                <option value="Tahoma">Tahoma</option>
+                <!-- Add more font options as needed -->
+            </select>
+        </div>
+        <div class="settings-option" id="dark-mode-toggle">
+            <span>暗色模式</span>
+            <input type="checkbox" id="darkModeCheckbox" onchange="toggleDarkMode()">
+        </div>
+        <div class="settings-option">
+            <span>字体大小</span>
+            <div id="font-adjust">
+                <button onclick="adjustFont('increase')">A+</button>
+                <button onclick="adjustFont('decrease')">A-</button>
+            </div>
+        </div>
+        <div class="settings-option" id="page-navigation">
+            <span>跳转到页</span>
+            <input type="number" id="page-number" min="1" value="1">
+            <button onclick="goToPage()">去</button>
+        </div>
+        <div class="settings-option">
+            <button id="save-btn" onclick="saveReadingProgress()">保存进度</button>
+        </div>
+ <div class="settings-option">
+<input type="file" id="import-btn" accept=".json" onchange="importReadingProgress(this)">
+</div>
+<!-- 在原有的设置菜单中添加一个按钮，点击弹窗显示使用说明 -->
+<div class="settings-option">
+    <button onclick="showInstructions()">使用说明</button>
+</div>
+
+    </div>
+    <div id="traffic-light">
+        <div class="light red" onclick="clearContent()"></div>
+        <div class="light yellow" onclick="toggleReaderSize()"></div>
+        <div class="light green" onclick="toggleFullScreen()"></div>
+    </div>
+    <input type="file" id="file-input"onchange="readFile(this)">
+    <div id="novel-content" onscroll="handleScroll()"></div>
+<div>  
+  <span id="current-page"></span>
+<span id="total-pages"></span>
+<span id="reading-progress"></span>
+</div>
+<div id="current-time"></div>
+   <span id="batteryStatus"></span>
+<div id="instructions-modal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeInstructions()">&times;</span>
+  <h2>小说阅读器使用说明</h2>
+        <p>
+            欢迎使用小说阅读器！以下是一些简单的使用说明：
+        </p>
+        <ol>
+            <li>点击上方的“上传”按钮选择你要阅读的小说文件。</li>
+            <li>小说内容将显示在阅读器中，支持自动分页</li>
+            <li>使用左右箭头翻页，或在设置菜单中手动输入页码进行跳转。</li>
+            <li>点击左上角的红色按钮清空阅读器内容。</li>
+            <li>点击左上角的黄色按钮缩小阅读器，再次点击可恢复。</li>
+            <li>点击左上角的绿色按钮可全屏阅读网页。</li>
+            <li>在设置菜单中，你可以调整字体、字号、启用暗色模式等设置。</li>
+            <li>设置菜单中的“每页行数”选项允许你调整每一页显示的行数。</li>
+            <li>点击设置菜单中的“使用说明”按钮，查看本说明。</li>
+            <li>你可以保存阅读进度，并在下次阅读时导入。</li>
+        </ol>
+        <p>祝你阅读愉快！</p>
+  </div>
+</div>
+<script>
+    // 添加弹窗显示和关闭的脚本
+    function showInstructions() {
+        const modal = document.getElementById('instructions-modal');
+        modal.style.display = 'block';
+    }
+
+    function closeInstructions() {
+        const modal = document.getElementById('instructions-modal');
+        modal.style.display = 'none';
+    }
+
+    // 当用户点击弹窗外部区域时关闭弹窗
+    window.onclick = function (event) {
+        const modal = document.getElementById('instructions-modal');
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    };
+</script>
+
+    <script>
+        let novelText = "";
+        let currentPage = 0;
+        let isFullScreen = false;
+        let isDarkMode = false;
+        let fontSize = 20;
+  let totalPagesDisplay = document.getElementById('total-pages');
+ let readingProgressDisplay = document.getElementById('reading-progress');
+        const linesPerPage = 25;
+        const novelContent = document.getElementById('novel-content');
+        const settingsMenu = document.getElementById('settings-menu');
+        const darkModeCheckbox = document.getElementById('darkModeCheckbox');
+        const pageNumberInput = document.getElementById('page-number');
+        const currentPageDisplay = document.getElementById('current-page');
+  const currentTimeDisplay = document.getElementById('current-time');
+
+        function readFile(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    novelText = e.target.result.split('\n');
+                    showPage(currentPage);
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        function showPage(pageNumber) {
+
+            const startLine = pageNumber * linesPerPage;
+            const endLine = startLine + linesPerPage;
+            const pageText = novelText.slice(startLine, endLine).join('\n');
+
+            novelContent.innerHTML = pageText;
+            novelContent.scrollTop = 0;
+            currentPageDisplay.textContent = `页码: ${pageNumber + 1}  |  `;
+
+        const totalPageCount = Math.ceil(novelText.length / linesPerPage);
+      const progressPercentage = ((pageNumber + 1) / totalPageCount) * 100;
+   readingProgressDisplay.textContent = `阅读进度: ${progressPercentage.toFixed(2)}%`;
+        totalPagesDisplay.textContent = `一共有: ${totalPageCount} 页  |  `;
+
+
+        }
+
+        function handleScroll() {
+            // Optionally handle scrolling events
+        }
+
+        function clearContent() {
+            novelContent.innerHTML = '';
+            currentPageDisplay.textContent = '';
+        }
+
+        function toggleReaderSize() {
+            const currentHeight = novelContent.style.height;
+            if (currentHeight === '80vh') {
+                novelContent.style.height = '40vh';
+            } else {
+                novelContent.style.height = '80vh';
+            }
+        }
+
+        function toggleFullScreen() {
+            if (!isFullScreen) {
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen();
+                } else if (document.documentElement.mozRequestFullScreen) {  
+                    document.documentElement.mozRequestFullScreen();
+                } else if (document.documentElement.webkitRequestFullscreen) { 
+                    document.documentElement.webkitRequestFullscreen();
+                } else if (document.documentElement.msRequestFullscreen) { 
+                    document.documentElement.msRequestFullscreen();
+                }
+                isFullScreen = true;
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.mozCancelFullScreen) {  
+                    document.mozCancelFullScreen();
+                } else if (document.webkitExitFullscreen) { 
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) { 
+                    document.msExitFullscreen();
+                }
+                isFullScreen = false;
+            }
+        }
+
+        function toggleSettingsMenu() {
+            settingsMenu.style.display = (settingsMenu.style.display === 'block') ? 'none' : 'block';
+        }
+
+        function changeFont(font) {
+            novelContent.style.fontFamily = font;
+        }
+
+        function changeFontSize(action) {
+            if (action === 'increase') {
+                fontSize += 2;
+            } else if (action === 'decrease') {
+                fontSize = (fontSize > 8) ? fontSize - 2 : fontSize;
+            }
+            novelContent.style.fontSize = `${fontSize}px`;
+        }
+
+        function toggleDarkMode() {
+            isDarkMode = !isDarkMode;
+            const backgroundColor = isDarkMode ? '#333' : '#fff';
+            const textColor = isDarkMode ? '#fff' : '#333';
+            document.body.style.backgroundColor = backgroundColor;
+            document.body.style.color = textColor;
+            novelContent.style.backgroundColor = backgroundColor;
+            settingsMenu.style.backgroundColor = backgroundColor;
+            settingsMenu.style.color = textColor;
+        }
+
+        function adjustFont(action) {
+            if (action === 'increase') {
+                fontSize += 2;
+            } else if (action === 'decrease') {
+                fontSize = (fontSize > 8) ? fontSize - 2 : fontSize;
+            }
+            novelContent.style.fontSize = `${fontSize}px`;
+        }
+
+        function goToPage() {
+            const pageNumber = parseInt(pageNumberInput.value, 10);
+            if (!isNaN(pageNumber) && pageNumber >= 1 && pageNumber <= Math.ceil(novelText.length / linesPerPage)) {
+                currentPage = pageNumber - 1;
+                showPage(currentPage);
+            }
+        }
+
+        function saveReadingProgress() {
+            const bookName = novelText[0].trim();
+            const timestamp = new Date().toISOString().replace(/[-T:]/g, '').split('.')[0];
+            const filename = `${bookName}_${timestamp}.json`;
+            const progressData = {
+                bookName: bookName,
+                currentPage: currentPage
+            };
+            const blob = new Blob([JSON.stringify(progressData)], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+        }
+
+        function importReadingProgress(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const progressData = JSON.parse(e.target.result);
+                        if (progressData.bookName === novelText[0].trim()) {
+                            currentPage = progressData.currentPage;
+                            showPage(currentPage);
+                        } else {
+                            alert('Error: Book name does not match.');
+                        }
+                    } catch (error) {
+                        alert('Error: Invalid JSON format.');
+                    }
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowRight' && currentPage < Math.ceil(novelText.length / linesPerPage) - 1) {
+                currentPage++;
+                showPage(currentPage);
+            } else if (e.key === 'ArrowLeft' && currentPage > 0) {
+                currentPage--;
+                showPage(currentPage);
+            }
+        });
+        function updateCurrentTime() {
+            const currentTime = new Date();
+            const hours = currentTime.getHours() % 12 || 12;
+            const minutes = currentTime.getMinutes();
+            const seconds = currentTime.getSeconds();
+            const amPm = currentTime.getHours() >= 12 ? 'PM' : 'AM';
+            const formattedTime = `${hours}:${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds} ${amPm}`;
+            currentTimeDisplay.textContent = `当前时间: ${formattedTime}`;
+        }
+
+        setInterval(updateCurrentTime, 1000);
+function updateBatteryStatus() {
+        navigator.getBattery().then(function (battery) {
+            var batteryLevel = (battery.level * 100).toFixed(2); // 转换为百分比
+            var chargingStatus = battery.charging ? '充电中' : '未充电';
+
+            batteryStatus.textContent = '电池：' + batteryLevel + '% (' + chargingStatus + ')';
+        });
+    }
+
+    // 初始调用一次
+    updateBatteryStatus();
+
+    setInterval(updateBatteryStatus, 1);
+    </script>
+
+</body>
+</html>

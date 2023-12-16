@@ -8,3 +8,5 @@ HI，这是一个txt阅读器
  2. [v 0.2](https://xzyl4303.github.io/TXT-Reader/TxT%20Reader%20v0.2.html)
 
  3. [v 0.3](https://xzyl4303.github.io/TXT-Reader/TxT%20Reader%20v0.3.html)
+
+ 4. [v 0.4](https://xzyl4303.github.io/TXT-Reader/TxT%20Reader%20v0.4.html)
